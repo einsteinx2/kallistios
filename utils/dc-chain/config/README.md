@@ -10,8 +10,8 @@ The available templates include the following configurations:
 | config.mk.12.3.0.sample | 12.3.0 | 4.3.0 | 2.41 | 8.5.0 | 2.41 | modern toolchain with GCC 12 |
 | **config.mk.stable.sample** | **13.2.0** | **4.3.0** | **2.41** | **8.5.0** | **2.41** | **modern toolchain with GCC 13**<br />**current "stable" configuration** |
 | config.mk.testing.sample | X | X | X | X | X | most recent GCC release<br />currently none in testing |
-| config.mk.devel.sample | git | 4.3.0 | 2.41 | 8.5.0 | 2.41 | latest dev version from git<br />builds as of 2023-07-30 |
-| config.mk.gccrs.sample | gccrs git | 4.3.0 | 2.41 | 8.5.0 | 2.41 | latest gccrs version from git<br />for latest Rust support<br />builds as of 2023-09-05 |
+| config.mk.devel.sample | git | 4.3.0 | 2.41 | 8.5.0 | 2.41 | latest dev version from git<br />builds as of 2023-09-18 |
+| config.mk.gccrs.sample | gccrs git | 4.3.0 | 2.41 | 8.5.0 | 2.41 | latest gccrs version from git<br />for latest Rust support<br />builds as of 2023-09-18 |
 
 The **stable** configuration is the primary, widely tested target for KallistiOS, and is the most recent toolchain configuration known to work with all example programs. The **testing** configuration contains the most recent release of GCC that builds KallistiOS and the 2ndmix example, and is without any known major issues. The **legacy** configuration contains an older version of the toolchain that may be useful in compiling older software. The alternative configurations are maintained at a low priority and are not guaranteed to build, but feel free to open a bug report if issues are encountered building one of these configurations.
 
