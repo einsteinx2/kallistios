@@ -1,3 +1,27 @@
+/* KallistiOS ##version##
+
+   arch/dreamcast/include/wdt.h
+   Copyright (c) 2023 Falco Girgis
+
+*/
+
+/** \file   arch/wdt.h
+    \brief  Watchdog timer API
+
+    This file provides an API built around utilizing the SH4's watchdog timer.
+    There are two different modes which are supported:
+        - watchdog mode: counter overflow causes a reset interrupt
+        - interval timer mode: counter overflow causes a timer interrupt
+
+    \author Falco Girgis
+*/
+
+#ifndef __ARCH_WDT_H
+#define __ARCH_WDT_H
+
+#include <sys/cdefs.h>
+__BEGIN_DECLS
+
 #include <stdint.h>
 
 typedef enum WDT_CLK_DIV {
@@ -34,4 +58,8 @@ void wdt_pet(void);
 
 void wdt_disable(void);
 int wdt_is_enabled(void);
+
+__END_DECLS
+
+#endif  /* __ARCH_WDT_H */
 

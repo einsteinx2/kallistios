@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdatomic.h>
 #include <kos.h>
 
 static void quit(void) {
@@ -9,11 +11,10 @@ static void quit(void) {
      exit(EXIT_SUCCESS);
 }
 
-int callbackFired = 0;
+static atomic_bool triggered = false;
 
-void timer_callback(void* user_data) {
-     printf("USER TIMER CALLBACK!!!\n");
-     callbackFired = !callbackFired;
+static void timer_callback(void* user_data) {
+    triggered = true;
 }
 
 int main(int argc, char* argv[]) { 
@@ -21,26 +22,16 @@ int main(int argc, char* argv[]) {
     cont_btn_callback(0, CONT_START | CONT_A | CONT_B | CONT_X | CONT_Y,
                       (cont_btn_callback_t)quit);
 
-#if 0
-     wdt_enable_watchdog(WDT_CLK_DIV_2048,
-                         12, 
-                         WDT_RST_POWER_ON);
-#else 
-     wdt_enable_timer(WDT_CLK_DIV_64,
-                      0,
-                      timer_callback,
-                      NULL);
-     #endif
+    wdt_enable_timer(WDT_CLK_DIV_4096,
+                     0,
+                     timer_callback,
+                     "trololo random userdata");
+    while(1) {
+        if(triggered) {
+            printf("WDT event fired!\n");
+            triggered = false;
+        }
+    }
 
-     while(1) {
-          if(!callbackFired)
-               printf("WDT counter: %u\n", wdt_get_counter());
-          else 
-               printf("FIIIRE!\n");
-                         wdt_pet();
-          fflush(stdout);
-     }
-
-
-     return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

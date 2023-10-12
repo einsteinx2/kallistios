@@ -23,26 +23,45 @@
 #define WTCSR_CKS1      1
 #define WTCSR_CKS0      0
 
+#define IPR_BASE        0xffd00004
+#define IPR(o)          (*((volatile uint16_t *)(IPR_BASE + o)))
+#define IPRA            0x0
+#define IPRB            0x4
+#define IPRC            0x8
+#define IPRD            0xc
+
+#define IPRB_WDT        12
+
 static void *user_data = NULL;
 static wdt_callback callback = NULL;
 
 static void wdt_isr(irq_t src, irq_context_t *cxt) {
-    printf("WDT IRQ!!!!!!!");
-    //fflush(stdout);
     callback(user_data);
+    uint8_t wtcsr = WDT_READ(WTCSR);
+    WDT_WRITE(WTCSR, wtcsr & (~(1 << WTCSR_IOVF)));
 }
 
 void wdt_enable_timer(WDT_CLK_DIV clk_config,
                       uint8_t initial_count,
                       wdt_callback callback_,
                       void *user_data_) {
-    WDT_WRITE(WTCSR, 0);
+    /* Stop WDT, Enable Interval Timer, Set Clock Divisor */
+    WDT_WRITE(WTCSR, clk_config);
 
+    /* Store user callback data for later */
     callback = callback_;
     user_data = user_data_;
+
+    /* Register our interrupt handler */
     irq_set_handler(EXC_WDT_ITI, wdt_isr);
 
+    /* Unmask the WDTIT interrupt */
+    IPR(IPRB) = IPR(IPRB) | (5 << IPRB_WDT);
+
+    /* Reset the WDT counter */
     WDT_WRITE(WTCNT, initial_count);
+
+    /* Write same configuration plus the enable bit set to start the WDT */
     WDT_WRITE(WTCSR, (1 << WTCSR_TME) | clk_config);
 }
 
@@ -69,7 +88,9 @@ void wdt_pet(void) {
 }
 
 void wdt_disable(void) {
-    WDT_WRITE(WTCSR, ~(1 << WTCSR_TME));
+    uint8_t wtcsr = WDT_READ(WTCSR);
+    wtcsr &= ~(1 << WTCSR_TME);
+    WDT_WRITE(WTCSR, wtcsr);
 }
 
 int wdt_is_enabled(void) {
