@@ -32,25 +32,42 @@
 
 #define IPRB_WDT        12
 
+#define WDT_CLK_DEFAULT WDT_CLK_DIV_32
+#define WDT_INT_DEFAULT 41
+
 static void *user_data = NULL;
 static wdt_callback callback = NULL;
+static uint32_t us_interval = 0;
+static uint32_t us_elapsed = 0;
 
 static void wdt_isr(irq_t src, irq_context_t *cxt) {
-    callback(user_data);
-    uint8_t wtcsr = WDT_READ(WTCSR);
-    WDT_WRITE(WTCSR, wtcsr & (~(1 << WTCSR_IOVF)));
+    (void)src;
+    (void)cxt;
+
+    us_elapsed += WDT_INT_DEFAULT;
+    
+    if(us_elapsed >= us_interval) { 
+        callback(user_data);
+        us_elapsed = 0;
+    }
+
+    WDT_WRITE(WTCSR, WDT_READ(WTCSR) & (~(1 << WTCSR_IOVF)));
 }
 
-void wdt_enable_timer(WDT_CLK_DIV clk_config,
-                      uint8_t initial_count,
+void wdt_enable_timer(uint8_t initial_count,
+                      uint32_t micro_seconds,
                       wdt_callback callback_,
                       void *user_data_) {
+    
+
     /* Stop WDT, Enable Interval Timer, Set Clock Divisor */
-    WDT_WRITE(WTCSR, clk_config);
+    WDT_WRITE(WTCSR, WDT_CLK_DEFAULT);
 
     /* Store user callback data for later */
     callback = callback_;
     user_data = user_data_;
+    us_elapsed = 0;
+    us_interval = micro_seconds;
 
     /* Register our interrupt handler */
     irq_set_handler(EXC_WDT_ITI, wdt_isr);
@@ -62,12 +79,12 @@ void wdt_enable_timer(WDT_CLK_DIV clk_config,
     WDT_WRITE(WTCNT, initial_count);
 
     /* Write same configuration plus the enable bit set to start the WDT */
-    WDT_WRITE(WTCSR, (1 << WTCSR_TME) | clk_config);
+    WDT_WRITE(WTCSR, (1 << WTCSR_TME) | WDT_CLK_DEFAULT);
 }
 
 
-void wdt_enable_watchdog(WDT_CLK_DIV clk_config,
-                         uint8_t initial_count,
+void wdt_enable_watchdog(uint8_t initial_count,
+                         WDT_CLK_DIV clk_config,
                          WDT_RST reset_select) {
     WDT_WRITE(WTCSR, (1 << WTCSR_WTIT));
     WDT_WRITE(WTCNT, initial_count);
@@ -88,12 +105,14 @@ void wdt_pet(void) {
 }
 
 void wdt_disable(void) {
-    uint8_t wtcsr = WDT_READ(WTCSR);
-    wtcsr &= ~(1 << WTCSR_TME);
-    WDT_WRITE(WTCSR, wtcsr);
+    /* Mask the WDTIT interrupt */
+    IPR(IPRB) = IPR(IPRB) & ~(7 << IPRB_WDT);
+
+    WDT_WRITE(WTCSR, WDT_READ(WTCSR) & ~(1 << WTCSR_TME));
+
+    wdt_pet();
 }
 
 int wdt_is_enabled(void) {
     return WDT_READ(WTCSR) & (1 << WTCSR_TME);
 }
-
